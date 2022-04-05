@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkers</title>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+in  vec3 vPosition;
+in  vec2 vTexCoord;
+uniform mat4 p,mv;
+out vec2 TexCoord;
+
+void main() 
+{
+  gl_Position = p*mv*vec4(vPosition,1.0); 
+  TexCoord = vTexCoord;
+} 
+    </script>
+
+    <!-- This in-line script is a fragment shader resource.
+         Shaders can be linked from an external file as well. -->
+    <script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+precision mediump float;
+        
+in vec2 TexCoord;
+uniform sampler2D tex;
+uniform sampler2D tex2;
+out vec4 fragColor;
+
+void main() 
+{ 
+	//fragColor = (texture(tex, TexCoord) + (texture(tex2, TexCood)/2.));
+    fragColor = (texture(tex, TexCoord) +
+                 texture(tex2,TexCoord))/2.0;
+}
+
+    </script>
+
+    <script type="text/javascript" src="../../Common/utility.js"></script>
+    <script type="text/javascript" src="../../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../../Common/MVnew.js"></script>
+    <script type="text/javascript" src="../../Common/flatten.js"></script>
+    <script type="text/javascript" src="checkers.js"></script>
+</head>
+
+<body>
+     <canvas id="gl-canvas" width="512" height="512">
+        Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+    <img src="Data/pic.png" id="mypic" hidden />
+
+</body>
+</html>

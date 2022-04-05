@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lab 6 Exercise</title>
+    <style>
+      body {
+          font-family: "Georgia", "Times New Roman", serif;
+      }
+      i, b {
+          color: #5765ab;
+      }
+      h2 {
+          color: #4e3e48;
+      }
+  </style>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+//diffuse and ambient with separate specular multi-light shader
+
+//inputs
+in vec4 vPosition;
+in vec3 vNormal;
+in vec2 vTexCoord;
+
+//outputs
+out vec4 color;
+out vec4 specular;
+out vec2 texCoord;
+
+//structs
+struct _light
+{
+    vec4 diffuse;
+    vec4 specular;    
+    vec4 ambient;
+    vec4 position;
+};
+
+struct _material
+{
+    vec4 specular;
+    float shininess;
+    vec4 diffuse;
+    vec4 ambient;
+};
+
+//constants
+const int n = 1; // number of lights
+
+//uniforms
+uniform mat4 p;     // perspective matrix
+uniform mat4 mv;    // modelview matrix
+uniform bool lighting;  // to enable and disable lighting
+uniform vec4 uColor;    // colour to use when lighting is disabled
+uniform _light light[n]; // properties for the n lights
+uniform _material material; // material properties
+
+//globals
+vec4 mvPosition; // unprojected vertex position
+vec3 N; // fixed surface normal
+
+//prototypes
+void lightCalc(in _light light, inout vec4 color, inout vec4 specular);
+
+void main() 
+{
+  //Transform the point
+  mvPosition = mv*vPosition;  //mvPosition is used often
+  gl_Position = p*mvPosition; 
+
+  if (lighting == false) 
+  {
+	color = uColor;
+  }
+  else
+  {
+    //Make sure the normal is actually unit length, 
+    //and isolate the important coordinates
+    N = normalize((mv*vec4(vNormal,0.0)).xyz);
+    
+    //Combine colors from all lights
+    color.rgb = vec3(0.,0.,0.);
+    specular.rgb = vec3(0.,0.,0.);
+    for (int i = 0; i < n; i++)
+    {
+      lightCalc(light[i], color, specular);
+    }
+    color.a = 1.0; //Override alpha from light calculations
+    specular.a = 1.0;
+  }
+  texCoord = vTexCoord;
+}
+
+void lightCalc(in _light light, inout vec4 color, inout vec4 specular)
+{
+  //Set up light direction for positional lights
+  vec3 L;
+  
+  //If the light position is a vector, use that as the direction
+  if (light.position.w == 0.0) 
+    L = normalize(light.position.xyz);
+  //Otherwise, the direction is a vector from the current vertex to the light
+  else
+    L = normalize(light.position.xyz - mvPosition.xyz);
+
+  //Set up eye vector
+  vec3 E = -normalize(mvPosition.xyz);
+
+  //Set up Blinn half vector
+  vec3 H = normalize(L+E); 
+
+  //Calculate specular coefficient
+  float Ks = pow(max(dot(N, H),0.0), material.shininess);
+  //Calculate diffuse coefficient
+  float Kd = max(dot(L,N), 0.0);
+
+  //Calculate colour for this light
+  color += Kd * material.diffuse * light.diffuse
+               + material.ambient * light.ambient;
+               
+  specular += Ks * material.specular*light.specular;
+}
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+precision mediump float;
+  
+in vec4 color;
+in vec4 specular;
+in vec2 texCoord;
+
+uniform sampler2D tex,tex2;
+
+out vec4 fragColor;
+
+void main() 
+{ 
+  fragColor = texture(tex, texCoord)*(color + specular);
+}
+    </script>
+
+    <script type="text/javascript" src="../../Common/utility.js"></script>
+    <script type="text/javascript" src="../../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../../Common/MVnew.js"></script>
+    <script type="text/javascript" src="../../Common/flatten.js"></script>
+    <script type="text/javascript" src="Lab6Exercise.js"></script>
+</head>
+
+<body>
+    <canvas id="gl-canvas" width="512" height="512">
+        Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+    <img src="Data/Nehe.png" id="pic1" hidden />
+    <img src="Data/ellie1.jpeg" id="pic2" hidden />
+    <img src="Data/ellie2.jpeg" id="pic3" hidden />
+    <img src="Data/ellie3.jpg" id="pic4" hidden />
+    <h2>Controls</h2>
+    <ul>
+      <li><b>A</b> rotates the cube or stops the rotation.</li>
+      <li><b>C</b> clamps the image.</li>
+      <li><b>R</b> repeats the image.</li>
+      <li><b>0</b> shows the initial NeHe picture.</li>
+      <li><b>1</b> shows the first picture of Ellie, a 512x512 picture.</li>
+      <li><b>2</b> shows the second picture of Ellie, a 500x500 picture.</li>
+      <li><b>3</b> shows the third picture of Ellie, a 256x256 picture.</li>
+    </ul>
+    <h2>Does It Work?</h2>
+    <p>All three images work on my computer. From the lab notes, </p>
+</body>
+</html>
